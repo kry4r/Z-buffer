@@ -5,11 +5,8 @@ Official PyTorch implementation for the paper:
 Authors: 刘文静, 谢文军, 韩汇东, 李琳, 刘晓平
 Published in: 小型微型计算机系统, 2025 (已录用)
 
-
 We propose a normalizing flow-based approach for emotion-controllable speech-driven 3D facial animation generation. Our method leverages the powerful modeling capabilities of normalizing flows to learn the complex mapping between speech features and facial motion parameters, while incorporating emotion control mechanisms to generate diverse and expressive facial animations.
-
 Environment
-<details><summary>Click to expand</summary>
 System Requirement
 
 Linux and Windows (tested on Windows 10)
@@ -24,9 +21,7 @@ conda activate 3dface
 pip install torch==2.1.1+cu121 torchvision==0.16.1+cu121 torchaudio==2.1.1+cu121 -f https://download.pytorch.org/whl/torch_stable.html
 Then, navigate to the project root folder and execute:
 bashpip install -r requirements.txt
-</details>
 Dataset
-<details><summary>Click to expand</summary>
 Download 3DMEAD dataset following the standard processing pipeline. This dataset represents facial animations using FLAME parameters.
 Data Download and Preprocess
 
@@ -44,23 +39,17 @@ datasets/
     ├── lve.txt        # Lip vertex indices
     ├── fdd.txt        # Upper face indices
     └── eve.txt        # Eye region indices
-</details>
 Model Training
-<details><summary>Click to expand</summary>
 Our training approach consists of multiple stages, incorporating motion prior learning and emotion-controllable generation.
 Stage 1: Motion Prior Training
 First, train the motion autoencoder (VAE variant) to learn the motion prior:
 bashpython main.py --model face_diffuser --dataset mead --max_epoch 100
 Stage 2: Emotion-Controlled Training
 Train the emotion-controllable model with graph-enhanced condition fusion:
-
 On Windows and Linux:
 bashpython main.py --model face_diffuser --dataset mead --max_epoch 100 --save_path outputs/model_graph
-
 If using Slurm Workload Manager:
 bashsbatch train_facediff.sh
-
-
 Training Parameters
 
 --lr: Learning rate (default: 0.00001)
@@ -70,9 +59,10 @@ Training Parameters
 --train_subjects: Training subject IDs
 --device: GPU device (default: "cuda:0")
 
-</details>
+VAE Variant Training
+To train the VAE variant for comparison:
+bashpython main.py --model face_diffuser --dataset mead --max_epoch 100 --save_path outputs/model_vae
 Evaluation
-<details><summary>Click to expand</summary>
 Quantitative Evaluation
 We provide code to compute the evaluation metrics mentioned in our paper:
 bashpython evaluation.py --save_path "outputs/model_vae_diffusion" --max_epoch 85 --num_samples 1
@@ -88,13 +78,10 @@ Optional Parameters
 --skip_steps: Number of diffusion steps to skip during inference (default: 900)
 --test_subjects: Specify test subjects for evaluation
 
-</details>
+Qualitative Evaluation
+For qualitative evaluation, you can visualize the generated animations and compare them with ground truth data using the provided rendering pipeline.
 Animation Generation
-<details><summary>Click to expand</summary>
-Generate Predictions
-Our model supports generation across 32 speaking styles (IDs), 8 emotions, and 3 intensity levels.
 Available Conditions
-<details><summary>Click to expand</summary>
 Subject IDs:
 M003, M005, M007, M009, M011, M012, M013, M019,
 M022, M023, M024, M025, M026, M027, M028, M029,
@@ -105,44 +92,44 @@ Emotions:
 4: fear, 5: disgusted, 6: angry, 7: contempt
 Intensity Levels:
 0: low, 1: medium, 2: high
-</details>
-Basic Generation
+Generate Predictions
+Basic Generation:
 bashpython predict.py --subject "M009" --id "M009" --emotion 6 --intensity 1 --wav_path "path/to/audio.wav"
+Batch Generation:
+bashpython predict.py --subject "M009" --id "M009" --emotion 6 --intensity 1 --wav_path "results/generation/test_audio/"
 Advanced Generation Options
 
-Multiple Samples: Generate diverse outputs for the same input
-Temperature Control: Adjust generation diversity (0.1-0.5 recommended)
+Multiple Samples: Set --num_samples 5 to generate diverse outputs for the same input
+Temperature Control: Adjust generation diversity using temperature parameter (0.1-0.5 recommended)
 Deterministic Mode: Disable stochastic sampling for consistent results
+Custom Audio: Place your audio files in the specified input directory
 
 Rendering
-The generated .npy files contain FLAME parameters and can be rendered into videos using the provided rendering pipeline.
-</details>
+The generated .npy files contain FLAME parameters and can be rendered into videos using the provided rendering pipeline. The output files will be saved in the specified result directory with emotion and intensity labels.
 Model Architecture
-<details><summary>Click to expand</summary>
 Key Components
 
-Audio Encoder: HuBERT-based feature extraction
-Motion Prior: VAE-based motion autoencoder
-Emotion Graph: Graph neural network for emotion modeling
-Condition Fusion: Enhanced multi-modal feature integration
-Normalizing Flow: Probabilistic motion generation
+Audio Encoder: HuBERT-based feature extraction from speech signals
+Motion Prior: VAE-based motion autoencoder for learning motion distributions
+Emotion Graph: Graph neural network for modeling emotion relationships
+Condition Fusion: Enhanced multi-modal feature integration mechanism
+Normalizing Flow: Probabilistic motion generation with controllable diversity
 
 Emotion Graph Architecture
 
 Node Representations: Learnable emotion and intensity embeddings
-Graph Attention: Multi-head attention for emotion relationships
-Intensity Modulation: Progressive intensity control mechanism
+Graph Attention: Multi-head attention mechanism for capturing emotion relationships
+Intensity Modulation: Progressive intensity control for fine-grained emotion expression
+Adjacency Learning: Learnable adjacency matrix for emotion correlations
 
 Technical Details
 
-Input: 16kHz audio, emotion labels, intensity levels, subject IDs
-Output: FLAME parameters (shape: 300, expression: 50, jaw: 3)
+Input: 16kHz audio signals, emotion labels, intensity levels, subject IDs
+Output: FLAME parameters (shape: 300D, expression: 50D, jaw: 3D)
 Training: Progressive training with motion prior and emotion control
-Inference: Stochastic sampling with temperature control
+Inference: Stochastic sampling with temperature control for diversity
 
-</details>
 File Structure
-<details><summary>Click to expand</summary>
 ├── data_loader.py              # Data loading and preprocessing
 ├── evaluation.py               # Quantitative evaluation script
 ├── main.py                     # Main training script
@@ -151,10 +138,35 @@ File Structure
 ├── motion_pred.py              # Motion prediction models
 ├── model_pred_emotion_graph.py # Emotion graph-enhanced predictor
 ├── model_pred_other.py         # Alternative model implementations
-├── utils.py                    # Utility functions
-├── requirements.txt            # Python dependencies
-└── README.md                   # This file
-</details>
+├── utils.py                    # Utility functions and helper methods
+├── train_facediff.sh          # Slurm training script
+├── evaluation.sh              # Slurm evaluation script
+└── README.md                   # This documentation
+Comparison with Baseline Methods
+We provide implementations for comparison with other state-of-the-art methods:
+FaceDiffuser Comparison
+Navigate to the diffusion folder for FaceDiffuser comparison:
+Training:
+bashcd diffusion
+python main.py
+Evaluation:
+bashpython evaluation_facediff.py --save_path "../model_weights/FaceDiffuser" --max_epoch 50
+Generation:
+bashpython predict.py --save_path "../model_weights/FaceDiffuser" --epoch 50 --subject "M009" --id "M009" --emotion 6 --intensity 1 --wav_path "../results/generation/test_audio/angry.wav"
+Troubleshooting
+Common Issues
+
+CUDA Memory Error: Reduce batch size or use gradient accumulation
+Audio Loading Error: Ensure audio files are in 16kHz WAV format
+Template File Missing: Download the template file and place it in the correct directory
+Model Loading Error: Check the model path and ensure the checkpoint file exists
+
+Performance Tips
+
+Use mixed precision training for faster training and reduced memory usage
+Enable gradient accumulation for effective larger batch sizes
+Use multiple GPUs for distributed training when available
+
 Citation
 If you find this code useful for your work, please consider citing:
 bibtex@article{liu2025emotion,
